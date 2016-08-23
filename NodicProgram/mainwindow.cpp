@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->progressBar->setVisible(false);
     ui->progressBar->setStyleSheet("QProgressBar::chunk { background-color: rgb(0, 0, 0) }");
     ui->groupBox_3->setVisible(false);
+    MainWindow::setWindowTitle(APP_NAME);
     //ui->progressBar->setStyleSheet("QProgressBar{border: 1px solid grey;border-radius: 5px;text-align: center;}"
     //                         "QProgressBar::chunk{background-color: #CD96CD;width: 10px;margin: 0.5px;}");
     //ui->progressBar->setGeometry(100, 100, 150, 23);
@@ -127,6 +128,7 @@ void MainWindow::on_pushButton_clicked()
         ui->label->setPalette(pa);
         ui->label->setText("擦除成功");
     }
+    //烧录
     MyThread thread;
     thread.start();
     int thrCount=0;
@@ -143,7 +145,7 @@ void MainWindow::on_pushButton_clicked()
     }while(thread.stop==false);
     thread.stop=false;
     thread.quit();
-    ui->progressBar->setValue(thrCount+(5000-thrCount)/2);
+    ui->progressBar->setValue(thrCount+(5000-thrCount)-320);
 
     //读取MAC地址
     p.start(READ_MAC_CMD);
@@ -217,7 +219,7 @@ void MainWindow::on_pushButton_clicked()
     }
 
     //把mac地址保存到文件里面
-    QFile file("macAdress.txt");
+    QFile file("appMacAdress.txt");
     if(file.open(QIODevice::WriteOnly|QIODevice::Append|QIODevice::Text))
     {
         QTextStream stream( &file );
@@ -232,7 +234,7 @@ void MainWindow::on_pushButton_clicked()
     erase++;
     QString s;
     ui->progressBar->setValue(5000);
-    ui->progressBar->setVisible(false);
+    //ui->progressBar->setVisible(false);
     ui->textBrowser->append(tr("烧录成功第")+tr("[%1]").arg(erase)+tr("次")+tr("MAC")+tr("[%1]").arg(s.append(readCmdMac)));
 }
 

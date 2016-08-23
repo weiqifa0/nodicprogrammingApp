@@ -20,10 +20,4 @@ void MyThread::run()
     qDebug()<< readCmd;
     stop=true;
     qDebug()<< stop;
-//    for(int i=0;i<1000;i++)
-//    {
-//        if(stop)break;
-//        qDebug()<<i;
-//        QThread::sleep(1);
-//    }
 }

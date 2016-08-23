@@ -22,4 +22,4 @@ HEADERS  += mainwindow.h \
     mythread.h
 
 FORMS    += mainwindow.ui
-DESTDIR  += "E:\project\github\nodicprogramming"
+DESTDIR  += "E:\project\github\nodicprogrammingApp"
