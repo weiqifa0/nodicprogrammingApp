@@ -8,7 +8,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = NodicProgram
+TARGET = NodicProgramApp
 TEMPLATE = app
 RC_FILE = nodic.rc
 
@@ -23,3 +23,6 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui
 DESTDIR  += "E:\project\github\nodicprogrammingApp"
+
+RESOURCES += \
+    appprogram.qrc

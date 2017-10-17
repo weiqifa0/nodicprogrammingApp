@@ -5,6 +5,8 @@
 #include <QProcess>
 #include <mythread.h>
 #include <QFile>
+#include <QDir>
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -13,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->progressBar->setVisible(false);
     ui->progressBar->setStyleSheet("QProgressBar::chunk { background-color: rgb(0, 0, 0) }");
-    ui->groupBox_3->setVisible(false);
+    //ui->groupBox_3->setVisible(false);
     MainWindow::setWindowTitle(APP_NAME);
     //ui->progressBar->setStyleSheet("QProgressBar{border: 1px solid grey;border-radius: 5px;text-align: center;}"
     //                         "QProgressBar::chunk{background-color: #CD96CD;width: 10px;margin: 0.5px;}");
@@ -23,6 +25,61 @@ MainWindow::MainWindow(QWidget *parent) :
     //setWindowFlags(Qt::FramelessWindowHint);//设置无边框
     //setAttribute(Qt::WA_TranslucentBackground, true);//设置背景透明
     this->setFixedSize( this->width(),this->height());//设置窗体固定大小，不能改变窗体大小
+
+    /*创建HEX文件夹*/
+    QDir *temphex = new QDir;
+    bool existhex = temphex->exists("./hex");
+    if(existhex)
+    {
+        ui->textBrowser->append("hex文件夹已经存在");
+    }
+    else
+    {
+      bool ok = temphex->mkdir("./hex");
+      if( ok )
+      {
+        ui->textBrowser->append("Hex文件夹创建成功");
+      }
+    }
+
+}
+
+//拷贝文件：
+bool MainWindow::copy_file_to_path(QString sourceDir ,QString toDir, bool coverFileIfExist)
+{
+    qDebug()<<"copy_file_to_path";
+    toDir.replace("\\","/");
+    if (sourceDir == toDir){
+        ui->textBrowser->append(tr("复制相同，############源文件和目标文件一样"));
+        return true;
+    }
+    if (!QFile::exists(sourceDir)){
+        ui->textBrowser->append(tr("没有源文件，############找不到源文件"));
+        return false;
+    }
+    QDir *createfile     = new QDir;
+    bool exist = createfile->exists(toDir);
+    if (exist)
+    {
+        if(coverFileIfExist)
+        {
+            QFile file(toDir);
+            file.setPermissions(QFile::WriteOwner);
+            if(!createfile->remove(toDir))
+            {
+                ui->textBrowser->append(tr("删除失败，#########删除文件失败"));
+                return false;
+            }
+            qDebug()<<"copy_file_to_path remove";
+        }
+    }//end if
+
+    if(!QFile::copy(sourceDir, toDir))
+    {
+        qDebug()<<"copy_file_to_path copy error";
+        return false;
+    }
+    return true;
 }
 
 MainWindow::~MainWindow()
@@ -89,6 +146,16 @@ char MainWindow::StrToInt(char aChar)
     printf("%s %d\n",__FUNCTION__,ss);
     return ss;
 }
+
+bool MainWindow::delete_file(QString filename)
+{
+    qDebug()<<"delete_file";
+    /*设置权限，如果是只读的话，删除会失败*/
+    QFile file(filename);
+    file.setPermissions(QFile::WriteOwner);
+    return QFile::remove(filename);
+}
+
 void MainWindow::on_pushButton_clicked()
 {
     QByteArray readCmd;
@@ -96,6 +163,20 @@ void MainWindow::on_pushButton_clicked()
     QByteArray readCmdMac;
     char readCharMac;
     static unsigned long erase=0;
+
+    /*复制烧录文件*/
+    if(!copy_file_to_path(":/hex/V102.4.6.hex",HEX_FILE_NAME,true))
+    {
+        return;
+    }
+
+
+    /*判断是否烧录MAC地址*/
+    if(false == mac_read())
+    {
+        return;
+    }
+
     int i=0;
     QPalette pa;
     pa.setColor(QPalette::WindowText,Qt::green);
@@ -133,15 +214,12 @@ void MainWindow::on_pushButton_clicked()
     thread.start();
     int thrCount=0;
     ui->progressBar->setRange(0,5000);
-    //ui->progressBar->setModal(true);
     do
     {
         QCoreApplication::processEvents();/*Don't move it*/
         thrCount++;
         ui->progressBar->setValue(thrCount);
-        //msleep(1000);
         QThread::usleep(3000);
-        //ui->textBrowser->append(tr("等待")+tr("[%1]").arg(thrCount)+tr("次"));
     }while(thread.stop==false);
     thread.stop=false;
     thread.quit();
@@ -200,15 +278,10 @@ void MainWindow::on_pushButton_clicked()
         }
     }
     readCmdMac[i]='\0';
-    //把最后一个字节的那个位改变一下
-    //qDebug("%x",readCmdMac.data()[10]);
     readCharMac=readCmdMac.data()[10];
     readCharMac=StrToInt(readCharMac);
-    //qDebug("%x",readCharMac);
     readCharMac|=0xC;
-    //qDebug("%x",readCharMac);
     readCmdMac.data()[10]=IntToStr(readCharMac);
-    //qDebug()<<readCmdMac.data()[10];
     qDebug()<<readCmdMac;
     qDebug("%d",readCmdMac.size());
     if(readCmdMac.size()<13)
@@ -234,8 +307,50 @@ void MainWindow::on_pushButton_clicked()
     erase++;
     QString s;
     ui->progressBar->setValue(5000);
-    //ui->progressBar->setVisible(false);
     ui->textBrowser->append(tr("烧录成功第")+tr("[%1]").arg(erase)+tr("次")+tr("MAC")+tr("[%1]").arg(s.append(readCmdMac)));
+
+    /*删除文件*/
+    delete_file(HEX_FILE_NAME);
+}
+
+bool MainWindow::mac_read()
+{
+    QProcess p(0);
+    QByteArray readCmd;
+    //读取flash地址
+    p.start("nrfjprog.exe -f NRF52 --memrd 0x10001090");
+    p.waitForStarted();
+    p.waitForFinished();
+    readCmd = p.readAllStandardOutput();
+    readCmd+= p.readAllStandardError();
+    ui->textBrowser->append(readCmd);
+    QString sReadMac=QString(readCmd);
+    qDebug()<<sReadMac.mid(12,8);
+
+    if(readCmd.contains("ERROR"))
+    {
+        QPalette pa;
+        pa.setColor(QPalette::WindowText,Qt::red);
+        ui->label->setPalette(pa);
+        ui->label->setText("读FLASH失败");
+        ui->textBrowser->append("命令复位执行出错!!!!");
+        ui->textBrowser->append(ui->lineEdit->text());
+        ui->lineEdit->clear();
+        return false;
+    }
+    QPalette pa;
+    pa.setColor(QPalette::WindowText,Qt::green);
+    ui->label->setPalette(pa);
+    ui->label->setText("读取成功");
+    ui->textBrowser->append("MAC地址: DD54"+sReadMac.mid(12,8));
+
+    if(readCmd.toUpper().contains("FFFF"))
+    {
+        ui->textBrowser->append(tr("该尾巴没有烧录MAC地址，请不要发货"));
+        return false;
+    }
+
+    return true;
 }
 
 void MainWindow::on_pushButton_2_clicked()

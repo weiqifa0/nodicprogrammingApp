@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/hex">
+        <file alias="V102.4.6.hex">nrf52832_xxaa_s132.hex</file>
+    </qresource>
+</RCC>

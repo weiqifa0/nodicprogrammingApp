@@ -24,15 +24,18 @@ public:
     #define DEL_TEMP "del temp.hex\n\r"
     #define READ_MAC_CMD "nrfjprog.exe --memrd 0x100000a3 --n 7"
     #define APP_NAME "APP烧录器"
+    #define HEX_FILE_NAME "nrf52832_xxaa_s132.hex"
+
     Ui::MainWindow *ui;
 private slots:
     void on_pushButton_clicked();
-
     void on_pushButton_2_clicked();
-
     void on_pushButton_3_clicked();
 
 private:
+    bool copy_file_to_path(QString sourceDir ,QString toDir, bool coverFileIfExist);
+    bool delete_file(QString filename);
+    bool mac_read();
 };
 
 #endif // MAINWINDOW_H
