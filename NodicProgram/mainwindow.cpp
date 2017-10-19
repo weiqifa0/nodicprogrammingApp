@@ -74,11 +74,17 @@ bool MainWindow::copy_file_to_path(QString sourceDir ,QString toDir, bool coverF
         }
     }//end if
 
+
     if(!QFile::copy(sourceDir, toDir))
     {
         qDebug()<<"copy_file_to_path copy error";
         return false;
     }
+
+    /*复制完后设置文件权限为可写*/
+    QFile file(toDir);
+    file.setPermissions(QFile::WriteOwner);
+
     return true;
 }
 
@@ -209,11 +215,12 @@ void MainWindow::on_pushButton_clicked()
         ui->label->setPalette(pa);
         ui->label->setText("擦除成功");
     }
-    //烧录
+    ui->textBrowser->append(tr("nrfjprog.exe -f NRF52 --program nrf52832_xxaa_s132.hex --verify"));
+    //烧录nrfjprog.exe -f NRF52 --program nrf52832_xxaa_s132.hex --verify
     MyThread thread;
     thread.start();
     int thrCount=0;
-    ui->progressBar->setRange(0,5000);
+    ui->progressBar->setRange(0,PROCESS_VALUE);
     do
     {
         QCoreApplication::processEvents();/*Don't move it*/
@@ -223,7 +230,14 @@ void MainWindow::on_pushButton_clicked()
     }while(thread.stop==false);
     thread.stop=false;
     thread.quit();
-    ui->progressBar->setValue(thrCount+(5000-thrCount)-320);
+    ui->textBrowser->append(tr(thread.updateReadCmd));
+    ui->progressBar->setValue(PROCESS_VALUE-PROCESS_VALUE/7);
+
+    if(thread.updateReadCmd.toUpper().contains("ERROR"))
+    {
+        ui->label->setText("烧录失败");
+        return;
+    }
 
     //读取MAC地址
     p.start(READ_MAC_CMD);
@@ -306,7 +320,7 @@ void MainWindow::on_pushButton_clicked()
     }
     erase++;
     QString s;
-    ui->progressBar->setValue(5000);
+    ui->progressBar->setValue(PROCESS_VALUE);
     ui->textBrowser->append(tr("烧录成功第")+tr("[%1]").arg(erase)+tr("次")+tr("MAC")+tr("[%1]").arg(s.append(readCmdMac)));
 
     /*删除文件*/

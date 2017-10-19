@@ -18,6 +18,7 @@ void MyThread::run()
     readCmd = p.readAllStandardOutput();
     readCmd+=p.readAllStandardError();
     qDebug()<< readCmd;
+    updateReadCmd = readCmd;
     stop=true;
     qDebug()<< stop;
 }

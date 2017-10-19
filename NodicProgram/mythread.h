@@ -9,6 +9,7 @@ public:
     bool stop ;
     explicit MyThread(QObject *parent = 0);
     void run();
+    QByteArray updateReadCmd;
 signals:
 
 public slots:

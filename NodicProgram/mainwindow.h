@@ -25,6 +25,7 @@ public:
     #define READ_MAC_CMD "nrfjprog.exe --memrd 0x100000a3 --n 7"
     #define APP_NAME "APP烧录器"
     #define HEX_FILE_NAME "nrf52832_xxaa_s132.hex"
+    #define PROCESS_VALUE 1500 //进度条值大小
 
     Ui::MainWindow *ui;
 private slots:
